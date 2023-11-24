@@ -3,4 +3,10 @@ build/
 main
 main.exe
 shit.c
+images/
+*.pdf
+*.docx
+lol.c
+affiche.c
+
 
