@@ -15,7 +15,8 @@ if not os.path.exists(BUILDDIR):
 
 def compile_source(source, output):
     try:
-        subprocess.run([COMPILER, source, "-c", "-o", output], check=True)
+        command = [COMPILER, '-g', source, "-c", "-o", output]
+        subprocess.run(command, check=True)
         print(f"Compilé {source} avec succès.")
     except subprocess.CalledProcessError:
         print(f"Erreur: Compilation de {source} a échoué.")

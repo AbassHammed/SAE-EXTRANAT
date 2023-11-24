@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
       csv_findLastname(inputFile, lastName);
       printf("Veuillez rentrer l'identifiant de la personne dont vous voulez supprimer : ");
       scanf(" %d", &id);
-      char stringId[5];
+      char stringId[20];
       sprintf(stringId, "%d", id);
       char *line = csv_readLinebyId(inputFile, stringId);
       printf("%s\n", line);
