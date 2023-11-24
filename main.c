@@ -115,7 +115,6 @@ int main(int argc, char *argv[])
     scanf("%s", command);
     // Supprime tout de l'entrée standard pour éviter d'avoir des caractères
     // indésirables à la suite des prochaines entrées.
-    fflush(stdin);
     // Selon la commande entrée on éxécute des blocks de programmes différents.
     switch (getCommand(command))
     {
