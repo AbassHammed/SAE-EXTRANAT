@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+from sys import argv
 
 path_del = "\\" if platform.system() == "Windows" else "/" 
 
@@ -8,15 +9,16 @@ COMPILER = "gcc"
 BUILDDIR = "build"
 LIB = "lib"
 ENTRY = "main.c"
-DEBUG = True
+DEBUG = '-d' in argv
+OPTIMIZE = '--opti' in argv or '-o' in argv
+
 
 if not os.path.exists(BUILDDIR):
     os.makedirs(BUILDDIR)
 
 def compile_source(source, output):
     try:
-        command = [COMPILER, '-g', source, "-c", "-o", output]
-        subprocess.run(command, check=True)
+        subprocess.run([COMPILER, source, "-c", "-o", output], check=True)
         print(f"Compilé {source} avec succès.")
     except subprocess.CalledProcessError:
         print(f"Erreur: Compilation de {source} a échoué.")
@@ -24,7 +26,7 @@ def compile_source(source, output):
 
 def link_objects(entry, objects, output):
     try:
-        command = [COMPILER, entry] + (['-g'] if DEBUG else []) + objects + ["-o", output]
+        command = [COMPILER, entry] + (['-g'] if DEBUG else []) + (['-O2'] if OPTIMIZE else []) + objects + ["-o", output]
         subprocess.run(command, check=True)
         print("Liaison réussi.")
     except subprocess.CalledProcessError:

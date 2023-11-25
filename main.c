@@ -3,7 +3,6 @@
 #include "lib/table.h"
 #include <stdio.h>
 #include <locale.h>
-#include <conio.h>
 
 /*
 Cet énumérateur permet de lister toutes les commandes qui sont possibles
