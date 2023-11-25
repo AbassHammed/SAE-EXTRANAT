@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
     case FIND:
     {
       printf("Sur quelle colonne voulez-vous rechercher le membre ?\n");
-      printf("1: Nom, 2: Prénom, 3: Adresse, 4: Téléphone, 5: Âge, 6: Taille, 7: Poids, 8: Meilleur temps\n");
+      printf("1: Nom, 2: Prénom, 3: Adresse, 4: Téléphone, 5: Âge, 6: Taille, 7: Poids\n");
       printf("Entrez le numéro correspondant à la colonne de votre choix: ");
       int columnChoice;
       char filterValue[256];
