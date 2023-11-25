@@ -124,4 +124,6 @@ int csv_extractId(const char *line);
 */
 int csv_getId(const char *path);
 
+void csv_filter(const char *path, const char *value, int columnIndex);
+
 #endif // !__CSV_HEADER

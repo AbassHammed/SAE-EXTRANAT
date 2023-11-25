@@ -15,10 +15,12 @@ partir de zéro.
 */
 enum Command
 {
-  HELP = 0,   // Commande pour afficher l'aide.
-  PRINT,      // Commande pour imprimer les données.
-  ADD,        // Commande pour ajouter une entrée.
-  UPDATE,     // Commande pour mettre à jour une entrée.
+  HELP = 0, // Commande pour afficher l'aide.
+  PRINT,    // Commande pour imprimer les données.
+  ADD,      // Commande pour ajouter une entrée.
+  UPDATE,   // Commande pour mettre à jour une entrée.
+  GET,      // Commande pour filtrer
+  FILTER,
   REMOVE,     // Commande pour supprimer une entrée.
   QUIT,       // Commande pour quitter le programme.
   UNKNOWN,    // Commande inconnue, utilisée pour la gestion d'erreurs.
@@ -44,6 +46,10 @@ enum Command getCommand(char *input)
     return ADD;
   else if (strcmp(input, "update") == 0)
     return UPDATE;
+  else if (strcmp(input, "get") == 0)
+    return GET;
+  else if (strcmp(input, "filter") == 0)
+    return FILTER;
   else if (strcmp(input, "remove") == 0)
     return REMOVE;
   else if (strcmp(input, "quit") == 0)
@@ -126,6 +132,22 @@ int main(int argc, char *argv[])
       // Traite la commande 'print': Affiche le contenu du fichier CSV sous forme de tableau.
       csv_printTable(inputFile);
       break;
+    case GET:
+    {
+      printf("Sur quelle colonne voulez-vous filtrer ?\n");
+      printf("1: Nom, 2: Prénom, 3: Adresse, 4: Téléphone, 5: Âge, 6: Taille, 7: Poids, 8: Meilleur temps\n");
+      printf("Entrez le numéro correspondant à la colonne de votre choix: ");
+      int columnChoice;
+      char filterValue[256];
+      scanf("%d", &columnChoice);
+      while (getchar() != '\n')
+        ;
+      printf("Entrez la valeur pour laquelle vous souhaitez filtrer: ");
+      fgets(filterValue, sizeof(filterValue), stdin);
+      filterValue[strcspn(filterValue, "\n")] = 0;
+      csv_filter(inputFile, filterValue, columnChoice);
+    }
+    break;
     case ADD:
     {
       // Traite la commande 'add': Permet à l'utilisateur d'ajouter un nouvel enregistrement

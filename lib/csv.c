@@ -447,3 +447,85 @@ int csv_getId(const char *path)
   fclose(file);
   return lastId + 1; // Retourne le prochain ID
 }
+
+void csv_filter(const char *path, const char *value, int columnIndex)
+{
+  // Duplique le chemin pour éviter de modifier le chemin original
+  char *path1 = strdup(path);
+  char *path2 = strdup(path);
+
+  // Extrait le nom de fichier et le répertoire du chemin
+  char *filename = basename(path1);
+  char *dir = dirname(path2);
+
+  // Construit le chemin du fichier temporaire
+  char tmpFilePath[256];
+  sprintf(tmpFilePath, "%s/temp____%s", dir, filename);
+
+  // Ouvre le fichier temporaire en écriture et le fichier original en lecture
+  FILE *wFile = csv_open(tmpFilePath, WRITE);
+  FILE *rFile = csv_open(path, READ);
+
+  columnIndex++;
+  // Délimiteur pour séparer les valeurs dans une ligne CSV
+  const char *delim = ",";
+  char buffer[MAX_BUFFER];
+  char lineCopy[MAX_BUFFER];
+
+  // Lit chaque ligne du fichier CSV
+  while (fgets(buffer, MAX_BUFFER, rFile))
+  {
+    // Copie la ligne pour la préserver
+    strcpy(lineCopy, buffer);
+    // Divise la ligne en valeurs
+    char *token = strtok(buffer, delim);
+    int currentColumn = 1;
+
+    // Parcourt les colonnes
+    while (token != NULL)
+    {
+      // Vérifie si la colonne actuelle est celle recherchée
+      if (currentColumn == columnIndex)
+      {
+        // Compare la valeur du token avec la valeur recherchée
+        if (strcmp(token, value) == 0)
+        {
+          // Si correspondance, écrit la ligne dans le fichier temporaires
+          fputs(lineCopy, wFile);
+          fflush(wFile);
+          break;
+        }
+      }
+      // Passe au token suivant
+      token = strtok(NULL, delim);
+      currentColumn++;
+    }
+  }
+  // Se positionne à la fin du fichier pour obtenir la taille
+  fseek(wFile, 0, SEEK_END);
+  long filesize = ftell(wFile);
+  // Remet le pointeur au début du fichier
+  fseek(wFile, 0, SEEK_SET);
+
+  // Ferme les fichiers
+  fclose(rFile);
+  fclose(wFile);
+
+  // Libère la mémoire allouée pour les chemins
+  free(path1);
+  free(path2);
+
+  // Vérifie si le fichier temporaire est vide
+  if (filesize == 0)
+  {
+    // Affiche un message si aucune correspondance n'est trouvée
+    printf("Aucune donnée dans la colonne selectionnée correspond à la valeur que vous recherchez.\n");
+    remove(tmpFilePath);
+  }
+  else
+  {
+    // Sinon, affiche les données du fichier temporaire
+    csv_printTable(tmpFilePath);
+    remove(tmpFilePath);
+  }
+}
