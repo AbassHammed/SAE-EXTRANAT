@@ -17,23 +17,19 @@ void set(TableRow *row, const char *value, const uint column)
     row->id = (uint)atoi(value);
     break;
   case 1:
-    strncpy(row->lastName, value, sizeof(row->lastName) - 1);
-    row->lastName[sizeof(row->lastName) - 1] = '\0';
+    strncpy(row->lastName, value, sizeof(row->lastName)); // Copie la chaîne de caractères dans le champ 'lastName'.
     break;
   case 2:
-    strncpy(row->firstName, value, sizeof(row->firstName) - 1);
-    row->firstName[sizeof(row->firstName) - 1] = '\0';
+    strncpy(row->firstName, value, sizeof(row->firstName));
     break;
   case 3:
-    strncpy(row->address, value, sizeof(row->address) - 1);
-    row->address[sizeof(row->address) - 1] = '\0';
+    strncpy(row->address, value, sizeof(row->address));
     break;
   case 4:
-    strncpy(row->phoneNumber, value, sizeof(row->phoneNumber) - 1);
-    row->phoneNumber[sizeof(row->phoneNumber) - 1] = '\0';
+    strncpy(row->phoneNumber, value, sizeof(row->phoneNumber));
     break;
   case 5:
-    row->age = (uint)atoi(value);
+    row->age = (uint)atoi(value); // Convertit la chaîne de caractères en entier pour 'age'.
     break;
   case 6:
     row->heightInCm = (uint)atoi(value);
@@ -42,10 +38,7 @@ void set(TableRow *row, const char *value, const uint column)
     row->weightInKg = (uint)atoi(value);
     break;
   case 8:
-    row->bestTimeInS = atof(value);
-    break;
-  default:
-    // Gérer les cas où la colonne n'est pas reconnue
+    row->bestTimeInS = atof(value); // Convertit la chaîne de caractères en réel pour 'bestTimeInS'.
     break;
   }
 }
@@ -54,41 +47,46 @@ void set(TableRow *row, const char *value, const uint column)
 // Fonction pour analyser une chaîne représentant une ligne d'un tableau et la convertir en structure TableRow
 TableRow *table_parseString(const char *line)
 {
-  TableRow *parsed = malloc(sizeof(char));
+  // Allocation dynamique de mémoire pour une nouvelle structure TableRow
+  TableRow *parsed = malloc(sizeof(TableRow));
   if (parsed == NULL)
   {
     printf("Problème de gestion de la mémoire.\n");
     return NULL;
   }
 
+  // Initialisation des variables pour suivre les indices dans la ligne et la valeur en cours de traitement
   uint lineIndex = 0, valueIndex = 0, column = 0;
-  char value[50] = "";
+  char value[50] = ""; // Tableau pour stocker temporairement chaque valeur
 
+  // Boucle pour parcourir chaque caractère de la ligne
   while (line[lineIndex] != '\0' && line[lineIndex] != '\n')
   {
+    // Si on trouve une virgule, cela signifie la fin d'une valeur
     if (line[lineIndex] == ',')
     {
-      value[valueIndex] = '\0';
-      set(parsed, value, column);
+      value[valueIndex] = '\0';   // Fin de la chaîne de caractères
+      set(parsed, value, column); // Enregistrement de la valeur dans la structure TableRow
 
+      // Réinitialisation de valueIndex pour la prochaine valeur et avance au prochain colonne
       valueIndex = 0;
       column++;
     }
-    else if (valueIndex < sizeof(value) - 1)
+    else if (valueIndex < sizeof(value) - 1) // Ajoute le caractère actuel à la valeur en cours si dans les limites du tableau
     {
       value[valueIndex++] = line[lineIndex];
     }
 
-    lineIndex++;
+    lineIndex++; // Avance au prochain caractère de la ligne
   }
-
+  // Traitement de la dernière valeur de la ligne si elle existe
   if (valueIndex > 0)
   {
     value[valueIndex] = '\0';
-    set(parsed, value, column);
+    set(parsed, value, column); // Enregistrement de la dernière valeur dans la structure TableRow
   }
 
-  return parsed;
+  return parsed; // Retourne la structure TableRow remplie
 }
 
 /* Pour let détails sur l'objectif de la fonction, cf. table.h */

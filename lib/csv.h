@@ -85,7 +85,6 @@ int csv_writeLine(char *path, const char *line);
 Cette procédure permet de mettre à jour un enregistrement dans le fichier CSV.
 */
 void csv_updateLine(char *path, const char *modifiedRow, const char *value, uint columnIndex);
-
 /*
 Recherche et extrait les lignes d'un fichier CSV où la seconde colonne correspond à une valeur spécifiée.
 Crée un fichier temporaire contenant uniquement ces lignes. Le fichier original n'est pas modifié.

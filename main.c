@@ -204,7 +204,6 @@ int main(int argc, char *argv[])
       char stringId[20];
       sprintf(stringId, "%d", id);
       char *line = csv_readLinebyId(inputFile, stringId);
-      printf("%s\n", line);
       TableRow *row = table_parseString(line);
       // Propose des options à l'utilisateur pour choisir l'information à modifier.
       printf("Quel information souhaiteriez-vous modifier ?\n");
@@ -276,13 +275,14 @@ int main(int argc, char *argv[])
       }
       // Sauvegarde les modifications apportées à l'enregistrement.
       char *modifiedRow = table_parseRow(row, true);
-      printf("%s", modifiedRow);
       csv_updateLine(inputFile, modifiedRow, stringId, 1);
-      // printf("%s", modifiedRow);
       //  Affiche un message de confirmation de la modification.
       printf("La ligne avec le nom de famille %s a été modifie avec succès\n", lastName);
       free(row);
-      free(line);
+      if (line != NULL)
+      {
+        free(line);
+      }
     }
     break;
     // Cas pour la commande REMOVE : Supprimer un enregistrement spécifique.
@@ -321,10 +321,11 @@ int main(int argc, char *argv[])
       printf("Au revoir...\n");
       run = false;
       break;
-    // Gère le cas d'une commande inconnue en informant l'utilisateur.
     case CLEAR:
-      system("cls");
+      // Utilise les séquences d'échappement ANSI pour effacer l'écran
+      printf("\033[2J\033[H");
       break;
+      // Gère le cas d'une commande inconnue en informant l'utilisateur.
     case UNKNOWN:
     default:
       printf("Commande inconnue.\n");

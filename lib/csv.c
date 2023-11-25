@@ -62,7 +62,7 @@ char *csv_readLinebyId(const char *path, const char *id)
       if (strcmp(token, id) == 0)
       { // Compare le token actuel avec l'ID fourni
         // Si l'ID correspond, alloue de la mémoire pour la ligne et la copie
-        line = malloc(strlen(buffer) + 1 * sizeof(char));
+        line = malloc(strlen(lineCopy) + 1);
         if (line != NULL)
         {
           strcpy(line, lineCopy);
@@ -148,6 +148,7 @@ void csv_updateLine(char *path, const char *modifiedRow, const char *value, uint
   char *path1 = strdup(path);
   char *path2 = strdup(path);
 
+  // Vérifie si la duplication a réussi pour les deux chemins
   if (!path1 || !path2)
   {
     perror("Erreur de duplication du chemin");
@@ -177,27 +178,34 @@ void csv_updateLine(char *path, const char *modifiedRow, const char *value, uint
     uint currentColumnIndex = 1;
     int lineIndex = 0, valueIndex = 0;
 
+    // Parcourt la ligne caractère par caractère
     while (line[lineIndex] != '\0' && line[lineIndex] != '\n')
     {
+      // Si on trouve une virgule, on termine le token actuel
       if (line[lineIndex] == ',')
       {
         currentValue[valueIndex] = '\0';
+        // Compare le token avec la valeur donnée
         if (currentColumnIndex == columnIndex && strcmp(currentValue, value) == 0)
         {
+          // Si correspondance, écrit la ligne modifiée dans le fichier temporaire
           fputs(modifiedRow, wFile);
           lineUpdated = true;
           break;
         }
+        // Réinitialise l'index pour le prochain token
         valueIndex = 0;
         currentColumnIndex++;
       }
       else if (valueIndex < sizeof(currentValue) - 1)
       {
+        // Continue de construire le token actuel
         currentValue[valueIndex++] = line[lineIndex];
       }
       lineIndex++;
     }
 
+    // Vérifie si le dernier token de la ligne correspond
     if (valueIndex > 0 && !lineUpdated)
     {
       currentValue[valueIndex] = '\0';
@@ -208,102 +216,27 @@ void csv_updateLine(char *path, const char *modifiedRow, const char *value, uint
       }
     }
 
+    // Si la ligne n'a pas été mise à jour, écrit la ligne originale
     if (!lineUpdated)
     {
       fputs(line, wFile);
     }
-
+    // Réinitialise le flag pour la prochaine ligne
     lineUpdated = false;
   }
 
+  // Ferme les fichiers ouverts
   fclose(rFile);
   fclose(wFile);
 
+  // Supprime le fichier original et renomme le fichier temporaire
   remove(path);
   rename(tmpFilePath, path);
 
+  // Libère la mémoire allouée pour les chemins dupliqués
   free(path1);
   free(path2);
 }
-
-// Fonction pour mettre à jour une ligne spécifique dans un fichier CSV
-// void csv_updateLine(char *path, const char *modifiedRow, const char *value, uint columnIndex)
-// {
-//   // Duplique le chemin pour éviter de modifier le chemin original
-//   char *path1 = strdup(path);
-//   char *path2 = strdup(path);
-//   if (!path1 || !path2)
-//   {
-//     perror("Erreur de duplication du chemin");
-//     return;
-//   }
-
-//   // Récupère le nom du fichier et le chemin du répertoire à partir du chemin dupliqué
-//   char *filename = basename(path1);
-//   char *dir = dirname(path2);
-//   puts(filename);
-//   // Construit le chemin du fichier temporaire
-//   char tmpFilePath[MAX_BUFFER];
-//   sprintf(tmpFilePath, "%s/temp____%s", dir, filename);
-
-//   // Ouvre le fichier temporaire en écriture et le fichier original en lecture
-//   FILE *wFile = csv_open(tmpFilePath, WRITE);
-//   FILE *rFile = csv_open(path, READ);
-
-//   // Déclare les buffers pour stocker les lignes lues et copiées
-//   char line[MAX_BUFFER];
-//   bool lineUpdated = false;
-
-//   // Lit le fichier ligne par ligne
-//   while (fgets(line, sizeof(line), rFile))
-//   {
-//     char *token = strtok(line, ",");
-//     uint currentColumnIndex = 1; // Indexation des colonnes à partir de 0
-//     printf("C'est la fin pour nous.\n");
-
-//     while (token != NULL)
-//     {
-//       if (currentColumnIndex == columnIndex)
-//       {
-//         if (strcmp(token, value) == 0)
-//         {
-//           fputs(modifiedRow, wFile); // Écrit la ligne modifiée
-//           lineUpdated = true;
-//           break;
-//         }
-//       }
-
-//       token = strtok(NULL, ",");
-//       currentColumnIndex++;
-//     }
-
-//     if (!lineUpdated)
-//     {
-//       fputs(line, wFile); // Écrit la ligne originale
-//     }
-
-//     lineUpdated = false; // Réinitialisation pour la prochaine ligne
-//   }
-
-//   // Ferme les fichiers
-//   fclose(rFile);
-//   fclose(wFile);
-
-//   // Remplace le fichier original par le fichier temporaire si une ligne a été mise à jour
-//   if (lineUpdated)
-//   {
-//     remove(path);
-//     // rename(tmpFilePath, path);
-//   }
-//   else
-//   {
-//     remove(tmpFilePath);
-//   }
-
-//   // Libère la mémoire allouée pour les chemins dupliqués
-//   free(path1);
-//   free(path2);
-// }
 
 void csv_findLastname(char *path, const char *value)
 {
@@ -453,28 +386,31 @@ void csv_printTable(char *path)
   fclose(read);
 }
 
-int csv_extractId(const char *line)
-{
-  int id = 0;
-  sscanf(line, "%d,", &id); // Utilise sscanf pour lire l'ID depuis le début de la ligne
-  return id;                // Retourne l'ID extrait
-}
-
+// Fonction pour extraire une valeur numérique d'une colonne spécifiée dans une ligne CSV
 int csv_extractValue(const char *line, uint columnIndex)
 {
+  // Buffer pour stocker une copie de la ligne
   char buffer[MAX_BUFFER];
+  // Copie la ligne dans le buffer en s'assurant de ne pas dépasser la taille maximale
   strncpy(buffer, line, MAX_BUFFER - 1);
+  // Assure que le buffer est terminé par un caractère nul
   buffer[MAX_BUFFER - 1] = '\0';
 
+  // Utilise strtok pour diviser la ligne en tokens basées sur les virgules
   char *token = strtok(buffer, ",");
+  // Index pour suivre la colonne courante
   uint currentColumnIndex = 1;
 
+  // Parcourt les tokens un par un
   while (token != NULL)
   {
+    // Vérifie si l'index de la colonne courante correspond à l'index demandé
     if (currentColumnIndex == columnIndex)
     {
+      // Variable pour stocker la valeur numérique convertie
       long value;
       char *stringId;
+      // Convertit le token en valeur longue
       value = strtol(token, &stringId, 10);
       if (*stringId != '\0')
       {
@@ -482,6 +418,7 @@ int csv_extractValue(const char *line, uint columnIndex)
       }
       return (int)value;
     }
+    // Passe au token suivant (prochaine colonne)
     token = strtok(NULL, ",");
     currentColumnIndex++;
   }
