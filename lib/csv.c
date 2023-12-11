@@ -448,7 +448,7 @@ int csv_getId(const char *path)
   return lastId + 1; // Retourne le prochain ID
 }
 
-void csv_filter(const char *path, const char *value, int columnIndex)
+void csv_findUser(const char *path, const char *value, int columnIndex)
 {
   // Duplique le chemin pour éviter de modifier le chemin original
   char *path1 = strdup(path);
@@ -528,4 +528,144 @@ void csv_filter(const char *path, const char *value, int columnIndex)
     csv_printTable(tmpFilePath);
     remove(tmpFilePath);
   }
+}
+
+// Cette fonction extrait les valeurs d'une colonne spécifique d'un fichier CSV et les stocke dans un tableau
+IntArray csv_extractIntArray(const char *path, uint columnIndex)
+{
+  // Ouvre le fichier CSV en mode lecture.
+  FILE *file = csv_open(path, READ);
+
+  // Initialise la structure IntArray pour stocker les résultats.
+  IntArray result;
+
+  // Alloue de la mémoire pour le tableau de valeurs.
+  result.values = malloc(ARRAY_SIZE * sizeof(int));
+  // Initialise la taille actuelle du tableau à 0.
+  result.size = 0;
+  uint capacity = ARRAY_SIZE;
+
+  char line[MAX_LINE];
+  while (fgets(line, MAX_LINE, file))
+  {
+    int value = csv_extractValue(line, columnIndex);
+    // Vérifie si la valeur extraite est valide
+    if (value != -1)
+    {
+      // Vérifie si la capacité actuelle du tableau est atteinte.
+      if (result.size == capacity)
+      {
+        // Double la capacité du tableau et réalloue la mémoire nécessaire.
+        capacity *= 2;
+        realloc(result.values, capacity * sizeof(int));
+      }
+      // Ajoute la valeur extraite au tableau et incrémente la taille du tableau.
+      result.values[result.size++] = value;
+    }
+  }
+  fclose(file);
+  // Retourne le tableau contenant les valeurs extraites.
+  return result;
+}
+
+void csv_sortedCSV(const char *path, const int *sortedArray, uint sortedSize, uint columnIndex)
+{
+  // Dupliquer le chemin pour éviter de modifier l'original
+  char *path1 = strdup(path);
+  char *path2 = strdup(path);
+
+  // Extraire le nom de fichier et le répertoire
+  char *filename = basename(path1);
+  char *dir = dirname(path2);
+
+  // Construire le chemin du fichier temporaire
+  char tmpFilePath[256];
+  sprintf(tmpFilePath, "%s/temp____sorted___%s", dir, filename);
+
+  // Ouvrir le fichier temporaire en mode écriture et le fichier original en mode lecture
+  FILE *wFile = csv_open(tmpFilePath, WRITE);
+  FILE *rfile = csv_open(path, READ);
+
+  char lineCopy[MAX_LINE];
+  int value;
+  bool flags[MAX_LINE] = {false};
+
+  // Ouvrir le fichier temporaire en mode écriture et le fichier original en mode lecture
+  for (uint i = 0; i < sortedSize; i++)
+  {
+    fseek(rfile, 0, SEEK_SET);
+
+    // Lire chaque ligne du fichier original
+    while (fgets(lineCopy, MAX_LINE, rfile))
+    {
+      // Lire chaque ligne du fichier original
+      value = csv_extractValue(lineCopy, columnIndex);
+      int lineNum = csv_extractValue(lineCopy, 1);
+
+      // Si la valeur correspond et que la ligne n'a pas encore été écrite, écrire la ligne
+      if (value == sortedArray[i] && !flags[lineNum])
+      {
+        fputs(lineCopy, wFile);
+        flags[lineNum] = true;
+      }
+    }
+  }
+
+  // fermeture des fichiers
+  fclose(rfile);
+  fclose(wFile);
+
+  // Libérer les chemins dupliqués
+  free(path1);
+  free(path2);
+
+  // Afficher le tableau trié et supprimer le fichier temporaire
+  csv_printTable(tmpFilePath);
+  remove(tmpFilePath);
+}
+
+void csv_sortedCSVInt(const char *path, int valueToMatch, uint columnIndex)
+{
+  // Dupliquer le chemin pour éviter de modifier l'original
+  char *path1 = strdup(path);
+  char *path2 = strdup(path);
+
+  // Extraire le nom de fichier et le répertoire
+  char *filename = basename(path1);
+  char *dir = dirname(path2);
+
+  // Construire le chemin du fichier temporaire
+  char tmpFilePath[256];
+  sprintf(tmpFilePath, "%s/temp_______%s", dir, filename);
+
+  // Ouvrir le fichier temporaire en mode écriture et le fichier original en mode lecture
+  FILE *wFile = csv_open(tmpFilePath, WRITE);
+  FILE *rfile = csv_open(path, READ);
+
+  char lineCopy[MAX_LINE];
+  int value;
+  bool flags[MAX_LINE] = {false};
+  int lineNum;
+
+  while (fgets(lineCopy, MAX_LINE, rfile))
+  {
+    // Extraire la valeur de la colonne spécifiée qui correspond a la colonne de la liste trié
+    value = csv_extractValue(lineCopy, columnIndex);
+    lineNum = csv_extractValue(lineCopy, 1);
+    // Écrire la ligne dans le fichier temporaire si la valeur correspond et que la ligne n'a pas encore été écrite
+    if (value == valueToMatch && !flags[lineNum])
+    {
+      fputs(lineCopy, wFile);
+      flags[lineNum] = true;
+    }
+  }
+
+  fclose(rfile);
+  fclose(wFile);
+
+  free(path1);
+  free(path2);
+
+  csv_printTable(tmpFilePath);
+  remove(tmpFilePath);
 }

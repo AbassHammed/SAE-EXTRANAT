@@ -1,6 +1,12 @@
+// Groupe D-07 sur moodle
+// ABASS Hammed
+// MAS Cédric
+// NAHARRO Guerby
+
 // Inclut les bibliothèques nécessaires pour la manipulation des CSV, des tables, les fonctions d'entrée-sortie standard
 #include "lib/csv.h"
 #include "lib/table.h"
+#include "lib/stats.h"
 #include <stdio.h>
 #include <locale.h>
 
@@ -14,13 +20,14 @@ partir de zéro.
 */
 enum Command
 {
-  HELP = 0, // Commande pour afficher l'aide.
-  PRINT,    // Commande pour imprimer les données.
-  ADD,      // Commande pour ajouter une entrée.
-  UPDATE,   // Commande pour mettre à jour une entrée.
-  FIND,     // Commande pour rechercher un membre
-  FILTER,
+  HELP = 0,   // Commande pour afficher l'aide.
+  PRINT,      // Commande pour imprimer les données.
+  ADD,        // Commande pour ajouter une entrée.
+  UPDATE,     // Commande pour mettre à jour une entrée.
+  FIND,       // Commande pour filtrer
+  FILTER,     // Commande pour trier
   REMOVE,     // Commande pour supprimer une entrée.
+  STAT,       // Commande pour les statistiques.
   QUIT,       // Commande pour quitter le programme.
   UNKNOWN,    // Commande inconnue, utilisée pour la gestion d'erreurs.
   CLEAR,      // commande pour effacer l'écran de la console
@@ -49,6 +56,8 @@ enum Command getCommand(char *input)
     return FIND;
   else if (strcmp(input, "filter") == 0)
     return FILTER;
+  else if (strcmp(input, "stat") == 0)
+    return STAT;
   else if (strcmp(input, "remove") == 0)
     return REMOVE;
   else if (strcmp(input, "quit") == 0)
@@ -112,11 +121,20 @@ int main(int argc, char *argv[])
   //
   // Quand une commande est inconnue, cela écrit un message d'erreur.
   printf("Bonjour.\nVeuillez entrer la commande qui correspond à l'opération que vous souhaitez effectuer\n");
-  printf("\tprint: Affiche l'ensemble des fiches dans le fichier.\n\tquit: Quitte l'application.\n\tadd: Ajoute un nouveau membre.\n\tremove: Suppression d'une fiche membre.\n\tupdate: Modification d'une fiche membre.\n");
+  printf(
+      "\t\033[32mprint\033[0m: Affiche l'ensemble des fiches dans le fichier.\n"
+      "\t\033[32mquit\033[0m: Quitte l'application.\n"
+      "\t\033[32madd\033[0m: Ajout d'un nouveau membre.\n"
+      "\t\033[32mremove\033[0m: Suppression d'une fiche membre.\n"
+      "\t\033[32mupdate\033[0m: Modification d'une fiche membre.\n"
+      "\t\033[32mclear\033[0m: Effacer la console.\n"
+      "\t\033[32mfind\033[0m: Recherche d'un membre.\n"
+      "\t\033[32mfilter\033[0m: Trier les membres selon leur âge, taille, poids.\n"
+      "\t\033[32mstat\033[0m: Calculs mathématique sur les données des joueurs\n");
   while (run)
   {
-    char command[10]; // Enregistre la commande dans une chaîne de caractères.
-    printf("> ");     // Indique à l'utilisateur qu'il peut écrire.
+    char command[10];        // Enregistre la commande dans une chaîne de caractères.
+    printf("> EXTRANAT $ "); // Indique à l'utilisateur qu'il peut écrire.
     scanf("%s", command);
     // Supprime tout de l'entrée standard pour éviter d'avoir des caractères
     // indésirables à la suite des prochaines entrées.
@@ -125,7 +143,16 @@ int main(int argc, char *argv[])
     {
       // Traite la commande 'help': Affiche les informations d'aide.
     case HELP:
-      printf("[AIDE]:\n\tprint: Affiche l'ensemble des fiches dans le fichier.\n\tquit: Quitte l'application.\n\tadd: Ajout d'un nouveau membre.\n\tremove: Suppression d'une fiche membre.\n\tupdate: Modification d'une fiche membre.\n");
+      printf("[AIDE]:\n"
+             "\t\033[32mprint\033[0m: Affiche l'ensemble des fiches dans le fichier.\n"
+             "\t\033[32mquit\033[0m: Quitte l'application.\n"
+             "\t\033[32madd\033[0m: Ajout d'un nouveau membre.\n"
+             "\t\033[32mremove\033[0m: Suppression d'une fiche membre.\n"
+             "\t\033[32mupdate\033[0m: Modification d'une fiche membre.\n"
+             "\t\033[32mclear\033[0m: Effacer la console.\n"
+             "\t\033[32mfind\033[0m: Recherche d'un membre.\n"
+             "\t\033[32mfilter\033[0m: Trier les membres selon leur âge.\n"
+             "\t\033[32mstat\033[0m: Calculs mathématique sur les données des joueurs\n");
       break;
     case PRINT:
       // Traite la commande 'print': Affiche le contenu du fichier CSV sous forme de tableau.
@@ -133,18 +160,31 @@ int main(int argc, char *argv[])
       break;
     case FIND:
     {
-      printf("Sur quelle colonne voulez-vous rechercher le membre ?\n");
-      printf("1: Nom\t\n2: Prénom\t\n3: Adresse\t\n4: Téléphone\t\n5: Âge\t\n6: Taille\t\n7: Poids\n");
-      printf("Entrez le numéro correspondant à la colonne de votre choix: ");
-      int columnChoice;
-      char filterValue[256];
+      // demande à l'utilisateur pour choisir une colonne de recherche
+      printf("Sur quelle colonne voulez-vous chercher ?\n");
+      // Liste des colonnes disponibles pour la recherche
+      printf("1: Nom, 2: Prénom, 3: Adresse, 4: Téléphone, 5: Âge, 6: Taille, 7: Poids, 8: Meilleur temps\n");
+      // Demande à l'utilisateur d'entrer le numéro de la colonne choisie
+      printf("Entrez le numéro correspondant à la colonne de votre choix: \n");
+      printf("> # ");
+      int columnChoice;      // Variable pour stocker le choix de la colonne
+      char filterValue[256]; // Tableau pour stocker la valeur de filtrage(ex : nom de famille)
+
+      // Lit le choix de la colonne de l'utilisateur
       scanf("%d", &columnChoice);
       while (getchar() != '\n')
         ;
-      printf("Entrez la valeur pour laquelle vous souhaitez rechercher : ");
+
+      // Demande à l'utilisateur la valeur à utiliser pour le filtrage
+      printf("Entrez la valeur pour laquelle vous souhaitez rechercher: \n");
+      printf("> # ");
+      // Lit la valeur de filtrage
       fgets(filterValue, sizeof(filterValue), stdin);
+      // Remplace le caractère de fin de ligne par un caractère nul pour terminer correctement la chaîne
       filterValue[strcspn(filterValue, "\n")] = 0;
-      csv_filter(inputFile, filterValue, columnChoice);
+
+      // Appelle la fonction csv_findUser avec le fichier, la valeur de filtrage et le choix de la colonne
+      csv_findUser(inputFile, filterValue, columnChoice);
     }
     break;
     case ADD:
@@ -153,7 +193,8 @@ int main(int argc, char *argv[])
       // Demande à l'utilisateur d'entrer le [nom de famille, prénom, etc.].
       // Vérifie la validité du numéro de téléphone. Affiche une erreur si le format n'est pas correct.
       TableRow row;
-
+      while (getchar() != '\n')
+        ;
       printf("Entrez un nom de famille : ");
       fgets(row.lastName, sizeof(row.lastName), stdin);
       row.lastName[strcspn(row.lastName, "\n")] = 0;
@@ -214,13 +255,15 @@ int main(int argc, char *argv[])
       char lastName[50]; // déclare une variable pour stocker le nom de famille saisi par l'utilisateur
       uint id;
       // Invite l'utilisateur a saisir le nom de famille de la personne à modifier
-      printf("Saisissez le nom de fammille de la personne dont vous souhaitez modifier les données :");
+      printf("Saisissez le nom de fammille de la personne dont vous souhaitez modifier les données : \n");
+      printf("> # ");
       scanf("%s", lastName);
       // Nettoie le buffer d'entrée
       while (getchar() != '\n')
         ;
       csv_findLastname(inputFile, lastName);
-      printf("Veuillez rentrer l'identifiant de la personne dont vous voulez supprimer : ");
+      printf("Veuillez rentrer l'identifiant de la personne dont vous voulez supprimer : \n");
+      printf("> # ");
       scanf(" %d", &id);
       char stringId[20];
       sprintf(stringId, "%d", id);
@@ -229,7 +272,8 @@ int main(int argc, char *argv[])
       // Propose des options à l'utilisateur pour choisir l'information à modifier.
       printf("Quel information souhaiteriez-vous modifier ?\n");
       printf("1: nom, 2: prenom, 3: adresse, 4: numero de tel, 5: age, 6: taille, 7: poids, 8: meilleur temps\n");
-      printf("Entrez le numero correspondant a l'information a modifier: ");
+      printf("Entrez le numero correspondant a l'information a modifier: \n");
+      printf("> # ");
       int choice;
       scanf("%d", &choice);
       while (getchar() != '\n')
@@ -291,7 +335,7 @@ int main(int argc, char *argv[])
         break;
       default:
         // Gère les entrées non valides pour la sélection de l'information à modifier.
-        printf("Le numero que vous avez saisi ne correspond a aucune information a modifier.\n");
+        printf("Le numero que vous avez saisi ne correspond a aucune information a modifier.");
         break;
       }
       // Sauvegarde les modifications apportées à l'enregistrement.
@@ -301,11 +345,157 @@ int main(int argc, char *argv[])
       printf("La ligne avec le nom de famille %s a été modifie avec succès\n", lastName);
       free(row);
       if (line != NULL)
-      {
         free(line);
+    }
+    break;
+    case FILTER:
+    {
+      uint choice;     // Choix de la colonne pour le tri
+      uint sortChoice; // Choix de l'algorithme de tri
+      IntArray data;   // Structure pour stocker les données extraites du CSV
+
+      // Affiche les options de tri disponibles
+      printf("+--------------------------------------+\n");
+      printf("| 1: Tri à bulles                      |\n");
+      printf("| 2: Tri rapide                        |\n");
+      printf("+--------------------------------------+\n");
+      printf("Nous proposons deux algorithmes de tri : \n");
+      printf("> # ");
+      scanf("%d", &sortChoice); // Lit le choix de l'algorithme de tri
+
+      // Affiche les options de colonnes disponibles pour le tri
+      printf("+-----------------------+\n");
+      printf("|  1: L'âge             |\n");
+      printf("|  2: Taille            |\n");
+      printf("|  3: Poids             |\n");
+      printf("+-----------------------+\n");
+      printf("Sur quelle colonne voulez-vous trier : \n");
+      printf("> # ");
+      scanf("%d", &choice); // Lit le choix de la colonne pour le tri
+
+      switch (choice)
+      {
+      case 1:
+        // Extrait les données de la colonne spécifiée du fichier CSV
+        data = csv_extractIntArray(inputFile, 6);
+        if (sortChoice == 2)
+        {
+          // Tri rapide
+          iquicksort(data.values, data.size);
+        }
+        else if (sortChoice == 1)
+        {
+          // Tri à bulles
+          ibubblesort(data.values, data.size);
+        }
+        // Réorganise le CSV selon les données triées
+        csv_sortedCSV(inputFile, data.values, data.size, 6);
+        break;
+      case 2:
+        // Même processus pour la colonne "Taille"
+        data = csv_extractIntArray(inputFile, 7);
+        if (sortChoice == 2)
+        {
+          iquicksort(data.values, data.size);
+        }
+        else if (sortChoice == 1)
+        {
+          ibubblesort(data.values, data.size);
+        }
+        csv_sortedCSV(inputFile, data.values, data.size, 7);
+        break;
+      case 3:
+        // Même processus pour la colonne "Poids"
+        data = csv_extractIntArray(inputFile, 8);
+        if (sortChoice == 2)
+        {
+          iquicksort(data.values, data.size);
+        }
+        else if (sortChoice == 1)
+        {
+          ibubblesort(data.values, data.size);
+        }
+        csv_sortedCSV(inputFile, data.values, data.size, 8);
+        break;
+      default:
+        printf("La valeure que vous avez saisit ne correspond à aucune opération\n");
+        break;
       }
     }
     break;
+
+    case STAT:
+    {
+      IntArray data;   // Structure pour stocker les données extraites du CSV
+      uint typeChoice; // Choix de l'opération statistique
+      uint choice;     // Choix de la colonne
+      uint max;        // Variable pour stocker le maximum
+      float average;   // Variable pour stocker la moyenne
+      float stdev;     // Variable pour stocker l'écart-type
+
+      // Affiche les options d'opérations statistiques disponibles
+      printf("Veuillez entrer le chiffre correspondant à l'opération que vous sohaitez effectuer : \n");
+      printf("+----------------------------------------------------+\n");
+      printf("|  1: Moyenne                                        |\n");
+      printf("|  2: Maximum                                        |\n");
+      printf("|  3: Minimum                                        |\n");
+      printf("|  4: L'écart-type                                   |\n");
+      printf("+----------------------------------------------------+\n");
+      printf("> # ");
+      scanf("%d", &typeChoice); // Lit le choix de l'opération statistique
+
+      // Affiche les options de colonnes pour les calculs statistiques
+      printf("+-----------------------+\n");
+      printf("|  1: L'âge             |\n");
+      printf("|  2: Taille            |\n");
+      printf("|  3: Poids             |\n");
+      printf("+-----------------------+\n");
+      printf("Sur quelle colonne voulez-vous effectuer le calcul : \n");
+      printf("> # ");
+      scanf("%d", &choice); // Lit le choix de la colonne
+
+      // Traitement en fonction de l'opération choisie
+      switch (typeChoice)
+      {
+      case 1:
+        // Calcul de la moyenne
+        {
+          // Extrait les données de la colonne choisie
+          data = csv_extractIntArray(inputFile, choice + 5);
+          // Calcule la moyenne
+          average = iaverage(data.values, data.size);
+          // Affiche la moyenne
+          printf("La moyenne dans la colonne que vous avez choisi est de %f\n", average);
+        }
+        break;
+      case 2:
+        // Trouve et affiche le maximum
+        data = csv_extractIntArray(inputFile, choice + 5);
+        max = imax(data.values, data.size);
+        printf("+---------------------------------------------------------------------Tableau de la valeure maximale-----------------------------------------------------------------------+\n");
+        csv_sortedCSVInt(inputFile, max, choice + 5);
+        break;
+      case 3:
+        // Trouve et affiche le minimum
+        data = csv_extractIntArray(inputFile, choice + 5);
+        max = imin(data.values, data.size);
+        printf("+---------------------------------------------------------------------Tableau de la valeure minimale-----------------------------------------------------------------------+\n");
+        csv_sortedCSVInt(inputFile, max, choice + 5);
+        break;
+      case 4:
+        // Calcul de l'écart-type
+        data = csv_extractIntArray(inputFile, choice + 5);
+        stdev = istdDeviation(data.values, data.size);
+        // Affiche l'écart-type
+        printf("L'écart-type dans la colonne que avez choisi est de %f\n", stdev);
+        break;
+      default:
+        printf("La valeure que vous avez saisit ne correspond à aucune opération\n");
+        break;
+      }
+    }
+    break;
+
     // Cas pour la commande REMOVE : Supprimer un enregistrement spécifique.
     case REMOVE:
     {
@@ -313,14 +503,16 @@ int main(int argc, char *argv[])
       char lastName[50];
       uint id;
       // Invite l'utilisateur à saisir le nom de famille de la personne à supprimer
-      printf("Saisissez le nom de fammille de la personne dont vous souhaitez supprimer les données :");
+      printf("Saisissez le nom de fammille de la personne dont vous souhaitez supprimer les données :\n");
+      printf("> # ");
       scanf("%s", lastName);
       // Nettoie le buffer d'entrée
       while (getchar() != '\n')
         ;
       bool hasBeenRemoved = false; // variable pour stocker l'état de la fonction csv_removeLine
       csv_findLastname(inputFile, lastName);
-      printf("Veuillez rentrer l'identifiant de la personne dont vous voulez supprimer : ");
+      printf("Veuillez rentrer l'identifiant de la personne dont vous voulez supprimer : \n");
+      printf("> # ");
       scanf(" %d", &id);
       char stringId[100];
       // Convertit l'ID en chaîne de caractères pour la suppression
@@ -339,6 +531,7 @@ int main(int argc, char *argv[])
     break;
     // Traite la commande 'quit': Termine l'exécution du programme et affiche un message d'adieu.
     case QUIT:
+      printf("\033[2J\033[H");
       printf("Au revoir...\n");
       run = false;
       break;
@@ -349,7 +542,7 @@ int main(int argc, char *argv[])
       // Gère le cas d'une commande inconnue en informant l'utilisateur.
     case UNKNOWN:
     default:
-      printf("Commande inconnue.\n");
+      printf("Commande \033[31m%s\033[0m inconnue.\n", command);
     }
   }
   // Retourne 0 pour indiquer une fin d'exécution réussie du programme.

@@ -1,6 +1,7 @@
 // Inclut le fichier d'en-tête 'table.h' pour la structure TableRow et les fonctions associées, et la bibliothèque standard pour la gestion de la mémoire.
 #include "table.h"
 #include <stdlib.h>
+
 /*
 Entrée: row (pointeur vers un TableRow); value (chaîne de caractères); column (entier)
 Retourne: rien
